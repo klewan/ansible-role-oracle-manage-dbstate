@@ -1,0 +1,22 @@
+galaxy_info:
+  author: Krzysztof Lewandowski
+  description: Manage Oracle Database state (startup/shutdown)
+
+  license: GPLv3
+
+  min_ansible_version: 2.7
+
+  platforms:
+  - name: EL
+    versions:
+    - 6
+    - 7
+
+  galaxy_tags:
+  - oracle
+  - databases
+  - state
+
+dependencies:
+  - { role: klewan.oracle }
+

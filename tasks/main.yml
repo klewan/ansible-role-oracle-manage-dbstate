@@ -1,0 +1,45 @@
+---
+
+- name: assert that ORACLE_HOME and ORACLE_SID are not empty
+  assert:
+    that:
+      - "oracle_manage_dbstate_oracle_home|default('', true) != ''"
+      - "oracle_manage_dbstate_oracle_sid|default('', true) != ''"
+    fail_msg: "'oracle_manage_dbstate_oracle_home' and oracle_manage_dbstate_oracle_sid must not be empty"
+  tags:
+    - oracle_manage_dbstate_precheck
+
+- name: verify command value
+  assert:
+    that:
+      - "oracle_manage_dbstate_command|default('',true)|upper in oracle_manage_dbstate_commands"
+    fail_msg: "Command 'oracle_manage_dbstate_command'='{{oracle_manage_dbstate_command|default('',true)|upper}}' value is not valid (accepted values: {{ oracle_manage_dbstate_commands|join(',') }})"
+  when: oracle_manage_dbstate_verify_command
+  tags:
+    - oracle_manage_dbstate_verify_command
+
+- name: change a database state
+  shell: |
+    printf "{{ oracle_manage_dbstate_sqlplus_sqlerror_command }}\n{{oracle_manage_dbstate_command}};\n" | $ORACLE_HOME/bin/sqlplus / as sysdba
+  environment:
+    ORACLE_HOME: '{{ oracle_manage_dbstate_oracle_home }}'
+    ORACLE_SID: '{{ oracle_manage_dbstate_oracle_sid }}'
+  register: _oracle_manage_dbstate_shell
+  ignore_errors: yes
+  when: not ansible_check_mode
+  tags:
+    - oracle_manage_dbstate_change_db_state
+
+- name: print a command output
+  debug: var=_oracle_manage_dbstate_shell.stdout_lines
+  when: not ansible_check_mode and _oracle_manage_dbstate_shell is defined and (oracle_manage_dbstate_print_command_output or _oracle_manage_dbstate_shell.rc != 0)
+  tags:
+    - oracle_manage_dbstate_change_print_command_output
+
+- name: display error message
+  fail:
+    msg: "SQLplus failed. See the output above."
+  when: not ansible_check_mode and _oracle_manage_dbstate_shell is defined and _oracle_manage_dbstate_shell.rc != 0
+  tags:
+    - oracle_manage_dbstate_error_message
+
